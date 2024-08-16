@@ -1,6 +1,6 @@
 ## Chronotest
 
-A simple example of using Project Chrono (built under GNU/Linux).
+A simple example of using Project Chrono (built under GNU/Linux) showing a cuboid tumbling in space.
 
 [![Demo video](https://i.ytimg.com/vi/sOVNxBt_VFk/hqdefault.jpg)](https://www.youtube.com/watch?v=sOVNxBt_VFk)
 
