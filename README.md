@@ -18,6 +18,7 @@ make
 ### Run
 
 ```Shell
+export LD_LIBRARY_PATH=/usr/local/lib
 ./chronotest
 ```
 
