@@ -6,8 +6,8 @@
 #include <chrono/physics/ChBody.h>
 #include <chrono/physics/ChSystemNSC.h>
 
-int width = 640;
-int height = 480;
+int width = 1280;
+int height = 720;
 
 const char *vertexSource = "#version 410 core\n\
 uniform float aspect;\n\
@@ -20,7 +20,7 @@ out vec3 n;\n\
 void main()\n\
 {\n\
   n = rotation * normal;\n\
-  gl_Position = vec4(rotation * (point * axes * vec3(1, aspect, 1)) + translation, 1);\n\
+  gl_Position = vec4((rotation * (point * axes) + translation) * vec3(1, aspect, 1), 1);\n\
 }";
 
 const char *fragmentSource = "#version 410 core\n\
@@ -184,7 +184,7 @@ int main(void)
                                        mass * (a * a + b * b) / 12.0));
   body->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
   body->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
-  body->SetAngVelLocal(chrono::ChVector3(0.1, 0.0, 2.0));
+  body->SetAngVelLocal(chrono::ChVector3(0.3, 0.0, 3.0));
   sys.AddBody(body);
 
   double t = glfwGetTime();
