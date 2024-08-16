@@ -2,6 +2,8 @@
 
 A simple example of using Project Chrono (built under GNU/Linux).
 
+[![Demo video](https://i.ytimg.com/vi/sOVNxBt_VFk/hqdefault.jpg)](https://www.youtube.com/watch?v=sOVNxBt_VFk)
+
 ### Dependencies
 
 You need to install the core of [Project Chrono][1] version 9.0.1 which requires Eigen as well.
