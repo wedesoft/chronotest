@@ -1,20 +1,23 @@
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <chrono/core/ChQuaternion.h>
 
 int width = 640;
 int height = 480;
 
 const char *vertexSource = "#version 410 core\n\
 uniform float aspect;\n\
+uniform vec3 axes;\n\
+uniform mat3 rotation;\n\
 in vec3 point;\n\
 in vec3 normal;\n\
 out vec3 n;\n\
 void main()\n\
 {\n\
   n = normal;\n\
-  gl_Position = vec4(point * vec3(1, aspect, 1), 1);\n\
+  gl_Position = vec4(rotation * (point * axes * vec3(1, aspect, 1)), 1);\n\
 }";
 
 const char *fragmentSource = "#version 410 core\n\
@@ -23,8 +26,8 @@ in vec3 n;\n\
 out vec3 fragColor;\n\
 void main()\n\
 {\n\
-  float ambient = 0.4;\n\
-  float diffuse = 0.6 * max(dot(light, n), 0);\n\
+  float ambient = 0.3;\n\
+  float diffuse = 0.7 * max(dot(light, n), 0);\n\
   fragColor = vec3(1, 1, 1) * (ambient + diffuse);\n\
 }";
 
@@ -107,7 +110,7 @@ int main(void)
   glfwMakeContextCurrent(window);
   glewInit();
 
-  glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
+  glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
   glViewport(0, 0, width, height);
 
   GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -155,9 +158,24 @@ int main(void)
   glDisable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
 
-  float light[3] = {sqrt(0.5), sqrt(0.5), 0.0};
+  chrono::ChQuaternion quat(1.0f, 0.0f, 0.0f, 0.0f);
+  chrono::ChVector3 x = quat.GetAxisX();
+  chrono::ChVector3 y = quat.GetAxisY();
+  chrono::ChVector3 z = quat.GetAxisZ();
+
+  float rotation[9] = {
+    x.x(), y.x(), z.x(),
+    x.y(), y.y(), z.y(),
+    x.z(), y.z(), z.z()
+  };
+
+  glUniformMatrix3fv(glGetUniformLocation(program, "rotation"), 1, GL_TRUE, rotation);
+
+  float light[3] = {0.8f, 0.48f, 0.36f};
   glUniform3fv(glGetUniformLocation(program, "light"), 1, light);
   glUniform1f(glGetUniformLocation(program, "aspect"), (float)width / (float)height);
+  float axes[3] = {1.0, 0.1, 0.5};
+  glUniform3fv(glGetUniformLocation(program, "axes"), 1, axes);
 
   while (!glfwWindowShouldClose(window)) {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);

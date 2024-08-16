@@ -1,5 +1,8 @@
-chronotest: chronotest.o
-	gcc -o $@ $^ -lglfw -lGLEW -lGL -lm
+CCFLAGS = $(shell pkg-config --cflags glfw3 glew eigen3)
+LDFLAGS = $(shell pkg-config --libs glfw3 glew eigen3)
 
-.c.o:
-	gcc -c -Wall -Werror -o $@ $<
+chronotest: chronotest.o
+	g++ -o $@ $^ $(LDFLAGS)
+
+.cc.o:
+	g++ -c -Wall -Werror $(CCFLAGS) -o $@ $<
