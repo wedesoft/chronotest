@@ -1,7 +1,12 @@
+#include <iostream>
 #include <cmath>
 #include <cstdio>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <chrono/physics/ChBody.h>
+#include <chrono/physics/ChSystemNSC.h>
+#include <chrono/physics/ChForce.h>
+#include <chrono/functions/ChFunctionConst.h>
 
 int width = 640;
 int height = 480;
@@ -103,19 +108,50 @@ int main(void)
 
   glEnableVertexAttribArray(0);
 
+  glPointSize(5.0f);
+
   glUniform1f(glGetUniformLocation(program, "aspect"), (float)width / (float)height);
+
+  chrono::ChSystemNSC sys;
+  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, 0.0, 0.0));
+  sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
+
+  auto center = chrono_types::make_shared<chrono::ChBody>();
+  center->SetName("center");
+  center->SetMass(5.742e+9);
+  center->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
+  center->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
+  sys.AddBody(center);
+
+  auto body = chrono_types::make_shared<chrono::ChBody>();
+  body->SetName("particle");
+  body->SetMass(10.0);
+  body->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
+  body->SetPos(chrono::ChVector3(0.8, 0.0, 0.0));
+  body->SetPosDt(chrono::ChVector3(0.0, 0.1, 0.0));
+  sys.AddBody(body);
+
+  auto force = chrono_types::make_shared<chrono::ChForce>();
+  auto fx = chrono_types::make_shared<chrono::ChFunctionConst>(-0.1);
+  force->SetF_x(fx);
+  auto fy = chrono_types::make_shared<chrono::ChFunctionConst>(-0.1);
+  force->SetF_y(fy);
+  body->AddForce(force);
 
   double t = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
     double dt = glfwGetTime() - t;
 
-    float translation[3] = {(float)0.0, (float)0.0, (float)0.0};
+    chrono::ChVector3 position = body->GetPos();
+    float translation[3] = {(float)position.x(), (float)position.y(), (float)position.z()};
+    std::cerr << position.x() << ", " << position.y() << ", " << position.z() << std::endl;
     glUniform3fv(glGetUniformLocation(program, "translation"), 1, translation);
 
     glClear(GL_COLOR_BUFFER_BIT);
     glDrawElements(GL_POINTS, 1, GL_UNSIGNED_INT, (void *)0);
     glfwSwapBuffers(window);
     glfwPollEvents();
+    sys.DoStepDynamics(dt);
     t += dt;
   };
 
