@@ -6,7 +6,7 @@
 #include <chrono/physics/ChBody.h>
 #include <chrono/physics/ChSystemNSC.h>
 #include <chrono/physics/ChForce.h>
-#include <chrono/functions/ChFunctionConst.h>
+#include <chrono/functions/ChFunctionBase.h>
 
 int width = 640;
 int height = 480;
@@ -58,6 +58,28 @@ void handleLinkError(const char *step, GLuint program)
       fprintf(stderr, "%s: %s\n", step, buffer);
   };
 }
+
+class ChFunctionGravity: public chrono::ChFunction
+{
+public:
+  ChFunctionGravity(chrono::ChBody *body, int index) : chrono::ChFunction(), m_body(body), m_index(index) {}
+  virtual ChFunction *Clone() const { return new ChFunctionGravity(m_body, m_index); }
+  virtual double GetVal(double x) const {
+    chrono::ChVector3 position = m_position + m_velocity * (x - m_time);
+    double dist = position.Length();
+    double gravity = 0.2 * m_body->GetMass() / (dist * dist);
+    return -position[m_index] * gravity / dist;
+  }
+  void SetTime(double time) { m_time = time; }
+  void SetPos(chrono::ChVector3<float> pos) { m_position = pos; }
+  void SetVel(chrono::ChVector3<float> vel) { m_velocity = vel; }
+protected:
+  chrono::ChBody *m_body;
+  int m_index;
+  double m_time;
+  chrono::ChVector3<float> m_position;
+  chrono::ChVector3<float> m_velocity;
+};
 
 int main(void)
 {
@@ -127,14 +149,14 @@ int main(void)
   body->SetName("particle");
   body->SetMass(10.0);
   body->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
-  body->SetPos(chrono::ChVector3(0.8, 0.0, 0.0));
+  body->SetPos(chrono::ChVector3(0.5, 0.0, 0.0));
   body->SetPosDt(chrono::ChVector3(0.0, 0.1, 0.0));
   sys.AddBody(body);
 
   auto force = chrono_types::make_shared<chrono::ChForce>();
-  auto fx = chrono_types::make_shared<chrono::ChFunctionConst>(-0.1);
+  auto fx = chrono_types::make_shared<ChFunctionGravity>(body.get(), 0);
   force->SetF_x(fx);
-  auto fy = chrono_types::make_shared<chrono::ChFunctionConst>(-0.1);
+  auto fy = chrono_types::make_shared<ChFunctionGravity>(body.get(), 1);
   force->SetF_y(fy);
   body->AddForce(force);
 
@@ -142,9 +164,15 @@ int main(void)
   while (!glfwWindowShouldClose(window)) {
     double dt = glfwGetTime() - t;
 
+    fx->SetTime(t);
+    fy->SetTime(t);
+    fx->SetPos(body->GetPos());
+    fy->SetPos(body->GetPos());
+    fx->SetVel(body->GetPosDt());
+    fy->SetVel(body->GetPosDt());
+
     chrono::ChVector3 position = body->GetPos();
     float translation[3] = {(float)position.x(), (float)position.y(), (float)position.z()};
-    std::cerr << position.x() << ", " << position.y() << ", " << position.z() << std::endl;
     glUniform3fv(glGetUniformLocation(program, "translation"), 1, translation);
 
     glClear(GL_COLOR_BUFFER_BIT);
