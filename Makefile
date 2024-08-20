@@ -1,4 +1,4 @@
-CCFLAGS = $(shell pkg-config --cflags glfw3 glew eigen3)
+CCFLAGS = -DEIGEN_MAX_ALIGN_BYTES=32 $(shell pkg-config --cflags glfw3 glew eigen3)
 LDFLAGS = $(shell pkg-config --libs glfw3 glew eigen3) -lChronoEngine
 
 all: chronotumble chronoorbit
@@ -13,4 +13,4 @@ clean:
 	rm -f chronotumble chronoorbit *.o
 
 .cc.o:
-	g++ -c -Wall -Werror $(CCFLAGS) -o $@ $<
+	g++ -c -g -Wall -Werror $(CCFLAGS) -o $@ $<

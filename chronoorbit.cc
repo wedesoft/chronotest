@@ -5,8 +5,8 @@
 #include <GLFW/glfw3.h>
 #include <chrono/physics/ChBody.h>
 #include <chrono/physics/ChSystemNSC.h>
-#include <chrono/physics/ChForce.h>
-#include <chrono/functions/ChFunctionBase.h>
+#include <chrono/physics/ChLoadsBody.h>
+#include <chrono/physics/ChLoadContainer.h>
 
 int width = 640;
 int height = 480;
@@ -59,26 +59,22 @@ void handleLinkError(const char *step, GLuint program)
   };
 }
 
-class ChFunctionGravity: public chrono::ChFunction
+class ChLoadGravity: public chrono::ChLoadBodyBody
 {
-public:
-  ChFunctionGravity(chrono::ChBody *body, int index) : chrono::ChFunction(), m_body(body), m_index(index) {}
-  virtual ChFunction *Clone() const { return new ChFunctionGravity(m_body, m_index); }
-  virtual double GetVal(double x) const {
-    chrono::ChVector3 position = m_position + m_velocity * (x - m_time);
-    double dist = position.Length();
-    double gravity = 0.2 * m_body->GetMass() / (dist * dist);
-    return -position[m_index] * gravity / dist;
-  }
-  void SetTime(double time) { m_time = time; }
-  void SetPos(chrono::ChVector3<float> pos) { m_position = pos; }
-  void SetVel(chrono::ChVector3<float> vel) { m_velocity = vel; }
-protected:
-  chrono::ChBody *m_body;
-  int m_index;
-  double m_time;
-  chrono::ChVector3<float> m_position;
-  chrono::ChVector3<float> m_velocity;
+  public:
+    ChLoadGravity(std::shared_ptr<chrono::ChBody> bodyA, std::shared_ptr<chrono::ChBody> bodyB):
+      chrono::ChLoadBodyBody(bodyA, bodyB, chrono::ChFrame<>()) {}
+    virtual ChObj *Clone() const { return new ChLoadGravity(*this); }
+  protected:
+    virtual void ComputeBodyBodyForceTorque(const chrono::ChFrameMoving<>& rel_AB, chrono::ChVector3d& loc_force, chrono::ChVector3d& loc_torque) override
+    {
+      chrono::ChVector3 position = GetBodyA()->GetPos();
+      double dist = position.Length();
+      double gravity = 0.05 * GetBodyA()->GetMass() / (dist * dist);
+      loc_force = position * gravity / dist;
+      loc_torque = chrono::VNULL;
+    }
+    virtual bool IsStiff(void) {return false; }
 };
 
 int main(void)
@@ -140,9 +136,11 @@ int main(void)
 
   auto center = chrono_types::make_shared<chrono::ChBody>();
   center->SetName("center");
-  center->SetMass(5.742e+9);
-  center->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
+  center->SetMass(1.0e+3);
+  center->SetInertiaXX(chrono::ChVector3(1000.0f, 1000.0f, 1000.0f));
   center->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
+  center->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
+  center->SetFixed(true);
   sys.AddBody(center);
 
   auto body = chrono_types::make_shared<chrono::ChBody>();
@@ -150,32 +148,26 @@ int main(void)
   body->SetMass(10.0);
   body->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
   body->SetPos(chrono::ChVector3(0.5, 0.0, 0.0));
-  body->SetPosDt(chrono::ChVector3(0.0, 0.1, 0.0));
+  body->SetPosDt(chrono::ChVector3(0.0, 0.2, 0.0));
+  body->SetFixed(false);
   sys.AddBody(body);
 
-  auto force = chrono_types::make_shared<chrono::ChForce>();
-  auto fx = chrono_types::make_shared<ChFunctionGravity>(body.get(), 0);
-  force->SetF_x(fx);
-  auto fy = chrono_types::make_shared<ChFunctionGravity>(body.get(), 1);
-  force->SetF_y(fy);
-  body->AddForce(force);
+  auto load_container = chrono_types::make_shared<chrono::ChLoadContainer>();
+  sys.Add(load_container);
+  auto gravity = chrono_types::make_shared<ChLoadGravity>(body, center);
+  load_container->Add(gravity);
+
+  sys.SetSolverType(chrono::ChSolver::Type::BARZILAIBORWEIN);
 
   double t = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
     double dt = glfwGetTime() - t;
 
-    fx->SetTime(t);
-    fy->SetTime(t);
-    fx->SetPos(body->GetPos());
-    fy->SetPos(body->GetPos());
-    fx->SetVel(body->GetPosDt());
-    fy->SetVel(body->GetPosDt());
-
     chrono::ChVector3 position = body->GetPos();
     float translation[3] = {(float)position.x(), (float)position.y(), (float)position.z()};
     glUniform3fv(glGetUniformLocation(program, "translation"), 1, translation);
 
-    glClear(GL_COLOR_BUFFER_BIT);
+    // glClear(GL_COLOR_BUFFER_BIT);
     glDrawElements(GL_POINTS, 1, GL_UNSIGNED_INT, (void *)0);
     glfwSwapBuffers(window);
     glfwPollEvents();
