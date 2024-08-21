@@ -184,7 +184,7 @@ int main(void)
                                        mass * (a * a + b * b) / 12.0));
   body->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
   body->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
-  body->SetAngVelLocal(chrono::ChVector3(0.3, 0.0, 3.0));
+  body->SetAngVelLocal(chrono::ChVector3(0.3, 0.0, 5.0));
   sys.AddBody(body);
 
   double t = glfwGetTime();
