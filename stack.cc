@@ -198,7 +198,7 @@ int main(void)
 
     auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
     coll_model->SetSafeMargin(0.001f);
-    coll_model->SetEnvelope(0.0025f);
+    coll_model->SetEnvelope(0.1f);
     auto shape = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, a, b, c);
     coll_model->AddShape(shape);
     body->AddCollisionModel(coll_model);
@@ -214,8 +214,8 @@ int main(void)
   sys.AddBody(ground);
 
   auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
-  coll_model->SetSafeMargin(0.004f);
-  coll_model->SetEnvelope(0.010f);
+  coll_model->SetSafeMargin(0.001f);
+  coll_model->SetEnvelope(0.1f);
   auto shape = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 2.0, 0.2, 2.0);
   coll_model->AddShape(shape);
   ground->AddCollisionModel(coll_model);
