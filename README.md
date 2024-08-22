@@ -24,7 +24,12 @@ export LD_LIBRARY_PATH=/usr/local/lib
 ./chronotest
 ```
 
+### See also
+
+* [Chrono tutorial (PDF)][5]
+
 [1]: https://projectchrono.org/
 [2]: https://api.projectchrono.org/development/tutorial_install_chrono.html
 [3]: https://www.glfw.org/
 [4]: https://glew.sourceforge.net/
+[5]: https://www.projectchrono.org/tasora/download/lecture_chrono_tutorial.pdf
