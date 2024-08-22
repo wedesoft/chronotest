@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstdio>
+#include <vector>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <chrono/core/ChQuaternion.h>
@@ -171,46 +172,84 @@ int main(void)
   glUniform3fv(glGetUniformLocation(program, "axes"), 1, axes);
 
   chrono::ChSystemNSC sys;
+  sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
   sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
-  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, 0.0, 0.0));
+  sys.SetSolverType(chrono::ChSolver::Type::PSOR);
+  sys.GetSolver()->AsIterative()->SetMaxIterations(100);
+  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.1, 0.0));
 
   // https://math.stackexchange.com/questions/4501028/calculating-moment-of-inertia-for-a-cuboid
-  auto body = chrono_types::make_shared<chrono::ChBody>();
-  body->SetName("Cuboid");
-  float mass = 10.0;
-  body->SetMass(mass);
-  body->SetInertiaXX(chrono::ChVector3(mass * (b * b + c * c) / 12.0,
-                                       mass * (a * a + c * c) / 12.0,
-                                       mass * (a * a + b * b) / 12.0));
-  body->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
-  body->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
-  body->SetAngVelLocal(chrono::ChVector3(0.3, 0.0, 5.0));
-  sys.AddBody(body);
+
+  auto material = chrono_types::make_shared<chrono::ChContactMaterialNSC>();
+  material->SetStaticFriction(0.9f);
+  material->SetSlidingFriction(0.5f);
+  material->SetRestitution(0.3f);
+
+  for (int i=0; i<3; i++) {
+    auto body = chrono_types::make_shared<chrono::ChBody>();
+    float mass = 10.0;
+    body->SetMass(mass);
+    body->SetInertiaXX(chrono::ChVector3(mass * (b * b + c * c) / 12.0,
+                                         mass * (a * a + c * c) / 12.0,
+                                         mass * (a * a + b * b) / 12.0));
+    body->SetPos(chrono::ChVector3(i * 0.2, 0.2 + i * 0.2, i * 0.05));
+    sys.AddBody(body);
+
+
+    auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
+    coll_model->SetSafeMargin(0.001f);
+    coll_model->SetEnvelope(0.0025f);
+    auto shape = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, a, b, c);
+    coll_model->AddShape(shape);
+    body->AddCollisionModel(coll_model);
+    body->EnableCollision(true);
+    // body->AddCollisionShape(shape, chrono::ChFrame<>(chrono::ChVector3(i * 0.2, 0.2 + i * 0.2, i * 0.05), chrono::QUNIT));
+  }
+
+  auto ground = chrono_types::make_shared<chrono::ChBody>();
+  ground->SetFixed(true);
+  ground->SetMass(1.0);
+  ground->SetInertiaXX(chrono::ChVector3(1.0, 1.0, 1.0));
+  ground->SetPos(chrono::ChVector3(0.0, -0.5, 0.0));
+  sys.AddBody(ground);
+
+  auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
+  coll_model->SetSafeMargin(0.004f);
+  coll_model->SetEnvelope(0.010f);
+  auto shape = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 2.0, 0.2, 2.0);
+  coll_model->AddShape(shape);
+  ground->AddCollisionModel(coll_model);
+  ground->EnableCollision(true);
 
   double t = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
     double dt = glfwGetTime() - t;
 
-    chrono::ChQuaternion quat = body->GetRot();
-    chrono::ChMatrix33 mat(quat);
-    chrono::ChVector3 x = mat.GetAxisX();
-    chrono::ChVector3 y = mat.GetAxisY();
-    chrono::ChVector3 z = mat.GetAxisZ();
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-    float rotation[9] = {
-      (float)x.x(), (float)y.x(), (float)z.x(),
-      (float)x.y(), (float)y.y(), (float)z.y(),
-      (float)x.z(), (float)y.z(), (float)z.z()
+    for (auto body=sys.GetBodies().begin(); body!=sys.GetBodies().end(); body++) {
+      if ((*body)->GetMass() == 1.0) continue;
+      chrono::ChQuaternion quat = (*body)->GetRot();
+      chrono::ChMatrix33 mat(quat);
+      chrono::ChVector3 x = mat.GetAxisX();
+      chrono::ChVector3 y = mat.GetAxisY();
+      chrono::ChVector3 z = mat.GetAxisZ();
+
+      float rotation[9] = {
+        (float)x.x(), (float)y.x(), (float)z.x(),
+        (float)x.y(), (float)y.y(), (float)z.y(),
+        (float)x.z(), (float)y.z(), (float)z.z()
+      };
+
+      glUniformMatrix3fv(glGetUniformLocation(program, "rotation"), 1, GL_TRUE, rotation);
+
+      chrono::ChVector3 position = (*body)->GetPos();
+      float translation[3] = {(float)position.x(), (float)position.y(), (float)position.z()};
+      glUniform3fv(glGetUniformLocation(program, "translation"), 1, translation);
+
+      glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, (void *)0);
     };
 
-    glUniformMatrix3fv(glGetUniformLocation(program, "rotation"), 1, GL_TRUE, rotation);
-
-    chrono::ChVector3 position = body->GetPos();
-    float translation[3] = {(float)position.x(), (float)position.y(), (float)position.z()};
-    glUniform3fv(glGetUniformLocation(program, "translation"), 1, translation);
-
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, (void *)0);
     glfwSwapBuffers(window);
     glfwPollEvents();
     sys.DoStepDynamics(dt);
