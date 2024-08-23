@@ -162,7 +162,7 @@ int main(void)
   glDisable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
 
-  float light[3] = {0.36f, 0.8f, 0.48f};
+  float light[3] = {0.36f, 0.8f, -0.48f};
   glUniform3fv(glGetUniformLocation(program, "light"), 1, light);
   glUniform1f(glGetUniformLocation(program, "aspect"), (float)width / (float)height);
   float a = 1.0;
@@ -172,11 +172,11 @@ int main(void)
   glUniform3fv(glGetUniformLocation(program, "axes"), 1, axes);
 
   chrono::ChSystemNSC sys;
-  sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
-  sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
+  sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::MULTICORE);
+  // sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
   sys.SetSolverType(chrono::ChSolver::Type::PSOR);
   sys.GetSolver()->AsIterative()->SetMaxIterations(100);
-  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.1, 0.0));
+  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.4, 0.0));
 
   // https://math.stackexchange.com/questions/4501028/calculating-moment-of-inertia-for-a-cuboid
 
@@ -192,30 +192,29 @@ int main(void)
     body->SetInertiaXX(chrono::ChVector3(mass * (b * b + c * c) / 12.0,
                                          mass * (a * a + c * c) / 12.0,
                                          mass * (a * a + b * b) / 12.0));
-    body->SetPos(chrono::ChVector3(i * 0.2, 0.2 + i * 0.2, i * 0.05));
+    body->SetPos(chrono::ChVector3(i * 0.2, 0.2 + i * 0.2, -i * 0.3));
     sys.AddBody(body);
 
 
     auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
-    coll_model->SetSafeMargin(0.001f);
-    coll_model->SetEnvelope(0.1f);
+    coll_model->SetSafeMargin(0.1f);
+    coll_model->SetEnvelope(0.001f);
     auto shape = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, a, b, c);
     coll_model->AddShape(shape);
     body->AddCollisionModel(coll_model);
     body->EnableCollision(true);
-    // body->AddCollisionShape(shape, chrono::ChFrame<>(chrono::ChVector3(i * 0.2, 0.2 + i * 0.2, i * 0.05), chrono::QUNIT));
   }
 
   auto ground = chrono_types::make_shared<chrono::ChBody>();
   ground->SetFixed(true);
-  ground->SetMass(1.0);
-  ground->SetInertiaXX(chrono::ChVector3(1.0, 1.0, 1.0));
+  ground->SetMass(1e+6);
+  ground->SetInertiaXX(chrono::ChVector3(1e+5, 1e+5, 1e+5));
   ground->SetPos(chrono::ChVector3(0.0, -0.5, 0.0));
   sys.AddBody(ground);
 
   auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
-  coll_model->SetSafeMargin(0.001f);
-  coll_model->SetEnvelope(0.1f);
+  coll_model->SetSafeMargin(0.1f);
+  coll_model->SetEnvelope(0.001f);
   auto shape = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 2.0, 0.2, 2.0);
   coll_model->AddShape(shape);
   ground->AddCollisionModel(coll_model);
@@ -228,7 +227,7 @@ int main(void)
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
     for (auto body=sys.GetBodies().begin(); body!=sys.GetBodies().end(); body++) {
-      if ((*body)->GetMass() == 1.0) continue;
+      if ((*body)->IsFixed()) continue;
       chrono::ChQuaternion quat = (*body)->GetRot();
       chrono::ChMatrix33 mat(quat);
       chrono::ChVector3 x = mat.GetAxisX();

@@ -161,7 +161,7 @@ int main(void)
   glDisable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
 
-  float light[3] = {0.36f, 0.8f, 0.48f};
+  float light[3] = {0.36f, 0.8f, -0.48f};
   glUniform3fv(glGetUniformLocation(program, "light"), 1, light);
   glUniform1f(glGetUniformLocation(program, "aspect"), (float)width / (float)height);
   float a = 1.0;
