@@ -110,7 +110,7 @@ void handleLinkError(const char *step, GLuint program)
 int main(void)
 {
   glfwInit();
-  GLFWwindow *window = glfwCreateWindow(width, height, "Tumbling motion with Project Chrono", NULL, NULL);
+  GLFWwindow *window = glfwCreateWindow(width, height, "Falling stack of boxes with Chrono", NULL, NULL);
   glfwMakeContextCurrent(window);
   glewInit();
 
@@ -172,8 +172,9 @@ int main(void)
   glUniform3fv(glGetUniformLocation(program, "axes"), 1, axes);
 
   chrono::ChSystemNSC sys;
-  sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::MULTICORE);
+  sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
   // sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
+  sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
   sys.SetSolverType(chrono::ChSolver::Type::PSOR);
   sys.GetSolver()->AsIterative()->SetMaxIterations(100);
   sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.4, 0.0));
@@ -192,7 +193,7 @@ int main(void)
     body->SetInertiaXX(chrono::ChVector3(mass * (b * b + c * c) / 12.0,
                                          mass * (a * a + c * c) / 12.0,
                                          mass * (a * a + b * b) / 12.0));
-    body->SetPos(chrono::ChVector3(i * 0.2, 0.2 + i * 0.2, -i * 0.3));
+    body->SetPos(chrono::ChVector3(i * 0.4, 0.2 + i * 0.2, -i * 0.3));
     sys.AddBody(body);
 
 
