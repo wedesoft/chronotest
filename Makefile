@@ -1,7 +1,7 @@
 CCFLAGS = -DEIGEN_MAX_ALIGN_BYTES=32 $(shell pkg-config --cflags glfw3 glew eigen3)
 LDFLAGS = $(shell pkg-config --libs glfw3 glew eigen3) -lChronoEngine
 
-all: tumble orbit stack
+all: tumble orbit stack pendulum
 
 tumble: tumble.o
 	g++ -o $@ $^ $(LDFLAGS)
@@ -12,8 +12,11 @@ orbit: orbit.o
 stack: stack.o
 	g++ -o $@ $^ $(LDFLAGS)
 
+pendulum: pendulum.o
+	g++ -o $@ $^ $(LDFLAGS)
+
 clean:
-	rm -f tumble orbit stack *.o
+	rm -f tumble orbit stack pendulum *.o
 
 .cc.o:
 	g++ -c -g -Wall -Werror $(CCFLAGS) -o $@ $<
