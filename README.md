@@ -1,6 +1,11 @@
 ## Chronotest
 
-A simple example of using Project Chrono (built under GNU/Linux) showing a cuboid tumbling in space.
+Simple examples to test the capabilities of Project Chrono (built under GNU/Linux):
+* tumbling cuboid in space
+* orbiting point mass
+* falling stack of cuboids
+* double pendulum
+* spring-damper system with prismatic joint
 
 [![Demo video](https://i.ytimg.com/vi/sOVNxBt_VFk/hqdefault.jpg)](https://www.youtube.com/watch?v=sOVNxBt_VFk)
 
