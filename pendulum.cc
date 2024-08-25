@@ -173,7 +173,6 @@ int main(void)
   glUniform3fv(glGetUniformLocation(program, "axes"), 1, axes);
 
   chrono::ChSystemNSC sys;
-  // sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
   sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
   sys.SetSolverType(chrono::ChSolver::Type::PSOR);
   sys.GetSolver()->AsIterative()->SetMaxIterations(100);

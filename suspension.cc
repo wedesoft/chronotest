@@ -5,6 +5,8 @@
 #include <GLFW/glfw3.h>
 #include <chrono/core/ChQuaternion.h>
 #include <chrono/physics/ChBody.h>
+#include <chrono/physics/ChLinkTSDA.h>
+#include <chrono/physics/ChLinkLock.h>
 #include <chrono/physics/ChSystemNSC.h>
 
 int width = 1280;
@@ -165,9 +167,9 @@ int main(void)
   float light[3] = {0.36f, 0.8f, -0.48f};
   glUniform3fv(glGetUniformLocation(program, "light"), 1, light);
   glUniform1f(glGetUniformLocation(program, "aspect"), (float)width / (float)height);
-  float a = 1.0;
+  float a = 0.1;
   float b = 0.1;
-  float c = 0.5;
+  float c = 0.1;
   float axes[3] = {a, b, c};
   glUniform3fv(glGetUniformLocation(program, "axes"), 1, axes);
 
@@ -185,25 +187,42 @@ int main(void)
   material->SetSlidingFriction(0.5f);
   material->SetRestitution(0.3f);
 
-  for (int i=0; i<3; i++) {
-    auto body = chrono_types::make_shared<chrono::ChBody>();
-    float mass = 10.0;
-    body->SetMass(mass);
-    body->SetInertiaXX(chrono::ChVector3(mass * (b * b + c * c) / 12.0,
-                                         mass * (a * a + c * c) / 12.0,
-                                         mass * (a * a + b * b) / 12.0));
-    body->SetPos(chrono::ChVector3(i * 0.4, 0.2 + i * 0.2, -i * 0.3));
-    sys.AddBody(body);
+  float upper_mass = 1000.0;
+  float mass = 10.0;
 
+  auto upper = chrono_types::make_shared<chrono::ChBody>();
+  upper->SetMass(upper_mass);
+  upper->SetInertiaXX(chrono::ChVector3(upper_mass * (b * b + c * c) / 12.0,
+                                        upper_mass * (a * a + c * c) / 12.0,
+                                        upper_mass * (a * a + b * b) / 12.0));
+  upper->SetPos(chrono::ChVector3(0.0, 0.6, 0.0));
+  sys.AddBody(upper);
 
-    auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
-    coll_model->SetSafeMargin(0.1f);
-    coll_model->SetEnvelope(0.001f);
-    auto shape = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, a, b, c);
-    coll_model->AddShape(shape);
-    body->AddCollisionModel(coll_model);
-    body->EnableCollision(true);
-  }
+  auto lower = chrono_types::make_shared<chrono::ChBody>();
+  lower->SetMass(mass);
+  lower->SetInertiaXX(chrono::ChVector3(mass * (b * b + c * c) / 12.0,
+                                        mass * (a * a + c * c) / 12.0,
+                                        mass * (a * a + b * b) / 12.0));
+  lower->SetPos(chrono::ChVector3(0.0, 0.3, 0.0));
+  sys.AddBody(lower);
+
+  auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
+  coll_model->SetSafeMargin(0.1f);
+  coll_model->SetEnvelope(0.001f);
+  auto shape = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, a, b, c);
+  coll_model->AddShape(shape);
+  lower->AddCollisionModel(coll_model);
+  lower->EnableCollision(true);
+
+  auto link = chrono_types::make_shared<chrono::ChLinkTSDA>();
+  link->Initialize(upper, lower, false, upper->GetPos(), lower->GetPos());
+  link->SetSpringCoefficient(10000.0f);
+  link->SetDampingCoefficient(1000.0f);
+  sys.AddLink(link);
+
+  auto prismatic = chrono_types::make_shared<chrono::ChLinkLockPrismatic>();
+  prismatic->Initialize(upper, lower, chrono::ChFrame<>(upper->GetPos(), chrono::QuatFromAngleX(-chrono::CH_PI_2)));
+  sys.AddLink(prismatic);
 
   auto ground = chrono_types::make_shared<chrono::ChBody>();
   ground->SetFixed(true);
@@ -212,12 +231,12 @@ int main(void)
   ground->SetPos(chrono::ChVector3(0.0, -0.5, 0.0));
   sys.AddBody(ground);
 
-  auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
-  coll_model->SetSafeMargin(0.1f);
-  coll_model->SetEnvelope(0.001f);
-  auto shape = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 2.0, 0.2, 2.0);
-  coll_model->AddShape(shape);
-  ground->AddCollisionModel(coll_model);
+  auto coll_model_ground = chrono_types::make_shared<chrono::ChCollisionModel>();
+  coll_model_ground->SetSafeMargin(0.1f);
+  coll_model_ground->SetEnvelope(0.001f);
+  auto shape_ground = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 2.0, 0.2, 2.0);
+  coll_model_ground->AddShape(shape_ground);
+  ground->AddCollisionModel(coll_model_ground);
   ground->EnableCollision(true);
 
   double t = glfwGetTime();
