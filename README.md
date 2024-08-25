@@ -42,6 +42,7 @@ export LD_LIBRARY_PATH=/usr/local/lib
 export LD_LIBRARY_PATH=/usr/local/lib
 ./stack
 ```
+
 ### Double pendulum
 
 [![Double pendulum](https://i.ytimg.com/vi/wFeajyhTXfI/hqdefault.jpg)](https://www.youtube.com/watch?v=wFeajyhTXfI)
@@ -50,6 +51,7 @@ export LD_LIBRARY_PATH=/usr/local/lib
 export LD_LIBRARY_PATH=/usr/local/lib
 ./pendulum
 ```
+
 ### Spring-damper system with prismatic joint
 
 [![Spring-damper system](https://i.ytimg.com/vi/ZBWpwDY6iwA/hqdefault.jpg)](https://www.youtube.com/watch?v=ZBWpwDY6iwA)
