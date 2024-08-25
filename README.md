@@ -21,7 +21,11 @@ make
 
 ```Shell
 export LD_LIBRARY_PATH=/usr/local/lib
-./chronotest
+./tumble
+./orbit
+./stack
+./pendulum
+./suspension
 ```
 
 ### See also
