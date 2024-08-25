@@ -1,13 +1,6 @@
 ## Chronotest
 
-Simple examples to test the capabilities of Project Chrono (built under GNU/Linux):
-* tumbling cuboid in space
-* orbiting point mass
-* falling stack of cuboids
-* double pendulum
-* spring-damper system with prismatic joint
-
-[![Demo video](https://i.ytimg.com/vi/sOVNxBt_VFk/hqdefault.jpg)](https://www.youtube.com/watch?v=sOVNxBt_VFk)
+Simple examples to test the capabilities of Project Chrono (built under GNU/Linux).
 
 ### Dependencies
 
@@ -23,13 +16,46 @@ make
 ```
 
 ### Run
+### Tumbling cuboid in space
+
+[![Tumbling cuboid in space](https://i.ytimg.com/vi/sOVNxBt_VFk/hqdefault.jpg)](https://www.youtube.com/watch?v=sOVNxBt_VFk)
 
 ```Shell
 export LD_LIBRARY_PATH=/usr/local/lib
 ./tumble
+```
+
+### Orbiting point mass
+
+[![Orbiting mass](https://i.ytimg.com/vi/d8NJRU075uM/hqdefault.jpg)](https://www.youtube.com/watch?v=d8NJRU075uM)
+
+```Shell
+export LD_LIBRARY_PATH=/usr/local/lib
 ./orbit
+```
+
+### Falling stack of cuboids
+
+[![Falling stack](https://i.ytimg.com/vi/ogPX6ZcIZ94/hqdefault.jpg)](https://www.youtube.com/watch?v=ogPX6ZcIZ94)
+
+```Shell
+export LD_LIBRARY_PATH=/usr/local/lib
 ./stack
+```
+### Double pendulum
+
+[![Double pendulum](https://i.ytimg.com/vi/wFeajyhTXfI/hqdefault.jpg)](https://www.youtube.com/watch?v=wFeajyhTXfI)
+
+```Shell
+export LD_LIBRARY_PATH=/usr/local/lib
 ./pendulum
+```
+### Spring-damper system with prismatic joint
+
+[![Spring-damper system](https://i.ytimg.com/vi/ZBWpwDY6iwA/hqdefault.jpg)](https://www.youtube.com/watch?v=ZBWpwDY6iwA)
+
+```Shell
+export LD_LIBRARY_PATH=/usr/local/lib
 ./suspension
 ```
 
