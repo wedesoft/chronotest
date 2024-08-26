@@ -16,11 +16,12 @@ uniform float aspect;\n\
 uniform float radius;\n\
 uniform int num_points;\n\
 uniform vec3 translation;\n\
+uniform mat3 rotation;\n\
 in vec3 point;\n\
 void main()\n\
 {\n\
   vec3 radius_vector = radius * vec3(cos(2.0 * 3.1415926 * gl_InstanceID / num_points), sin(2.0 * 3.1415926 * gl_InstanceID / num_points), 0);\n\
-  gl_Position = vec4((point + translation + radius_vector) * vec3(1, aspect, 1), 1);\n\
+  gl_Position = vec4((rotation * (point + radius_vector) + translation) * vec3(1, aspect, 1), 1);\n\
 }";
 
 const char *fragmentSource = "#version 410 core\n\
@@ -61,24 +62,6 @@ void handleLinkError(const char *step, GLuint program)
       fprintf(stderr, "%s: %s\n", step, buffer);
   };
 }
-
-class ChLoadGravity: public chrono::ChLoadBodyBody
-{
-  public:
-    ChLoadGravity(std::shared_ptr<chrono::ChBody> bodyA, std::shared_ptr<chrono::ChBody> bodyB):
-      chrono::ChLoadBodyBody(bodyA, bodyB, chrono::ChFrame<>()) {}
-    virtual ChObj *Clone() const { return new ChLoadGravity(*this); }
-  protected:
-    virtual void ComputeBodyBodyForceTorque(const chrono::ChFrameMoving<>& rel_AB, chrono::ChVector3d& loc_force, chrono::ChVector3d& loc_torque) override
-    {
-      chrono::ChVector3 position = GetBodyA()->GetPos();
-      double dist = position.Length();
-      double gravity = 0.05 * GetBodyA()->GetMass() / (dist * dist);
-      loc_force = position * gravity / dist;
-      loc_torque = chrono::VNULL;
-    }
-    virtual bool IsStiff(void) {return false; }
-};
 
 int main(void)
 {
@@ -139,16 +122,48 @@ int main(void)
   glUniform1i(glGetUniformLocation(program, "num_points"), num_points);
 
   chrono::ChSystemNSC sys;
-  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, 0.0, 0.0));
-  sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
+  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.1, 0.0));
+  sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
+  sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
+  // sys.SetSolverType(chrono::ChSolver::Type::PSOR);
+  // sys.GetSolver()->AsIterative()->SetMaxIterations(100);
+
+  auto material = chrono_types::make_shared<chrono::ChContactMaterialNSC>();
+  material->SetStaticFriction(0.9f);
+  material->SetSlidingFriction(0.5f);
+  material->SetRestitution(0.4f);
 
   auto body = chrono_types::make_shared<chrono::ChBody>();
   body->SetName("particle");
   body->SetMass(10.0);
   body->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
-  body->SetPos(chrono::ChVector3(0.5, 0.0, 0.0));
+  body->SetPos(chrono::ChVector3(0.0, 0.2, 0.0));
+  body->SetPosDt(chrono::ChVector3(0.5, 0.0, 0.0));
   body->SetFixed(false);
   sys.AddBody(body);
+
+  auto coll_model_body = chrono_types::make_shared<chrono::ChCollisionModel>();
+  coll_model_body->SetSafeMargin(0.1f);
+  coll_model_body->SetEnvelope(0.01f);
+  auto shape_body = chrono_types::make_shared<chrono::ChCollisionShapeCylinder>(material, radius, 0.2);
+  coll_model_body->AddShape(shape_body);
+  body->AddCollisionModel(coll_model_body);
+  body->EnableCollision(true);
+
+  auto ground = chrono_types::make_shared<chrono::ChBody>();
+  ground->SetFixed(true);
+  ground->SetMass(1e+6);
+  ground->SetInertiaXX(chrono::ChVector3(1e+5, 1e+5, 1e+5));
+  ground->SetPos(chrono::ChVector3(0.0, -0.5, 0.0));
+  sys.AddBody(ground);
+
+  auto coll_model_ground = chrono_types::make_shared<chrono::ChCollisionModel>();
+  coll_model_ground->SetSafeMargin(0.1f);
+  coll_model_ground->SetEnvelope(0.001f);
+  auto shape_ground = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 2.0, 0.2, 2.0);
+  coll_model_ground->AddShape(shape_ground);
+  ground->AddCollisionModel(coll_model_ground);
+  ground->EnableCollision(true);
 
   double t = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
@@ -156,7 +171,23 @@ int main(void)
 
     glClear(GL_COLOR_BUFFER_BIT);
 
+    chrono::ChQuaternion quat = body->GetRot();
+    chrono::ChMatrix33 mat(quat);
+    chrono::ChVector3 x = mat.GetAxisX();
+    chrono::ChVector3 y = mat.GetAxisY();
+    chrono::ChVector3 z = mat.GetAxisZ();
+
+    float rotation[9] = {
+      (float)x.x(), (float)y.x(), (float)z.x(),
+      (float)x.y(), (float)y.y(), (float)z.y(),
+      (float)x.z(), (float)y.z(), (float)z.z()
+    };
+
+    glUniformMatrix3fv(glGetUniformLocation(program, "rotation"), 1, GL_TRUE, rotation);
+
     chrono::ChVector3 position = body->GetPos();
+    position.Set(0.0, position.y(), position.z());
+    body->SetPos(position);
     float translation[3] = {(float)position.x(), (float)position.y(), (float)position.z()};
     glUniform3fv(glGetUniformLocation(program, "translation"), 1, translation);
 
