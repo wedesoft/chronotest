@@ -195,7 +195,6 @@ int main(void)
     body->SetPos(chrono::ChVector3(i * 0.4, 0.2 + i * 0.2, -i * 0.3));
     sys.AddBody(body);
 
-
     auto coll_model = chrono_types::make_shared<chrono::ChCollisionModel>();
     coll_model->SetSafeMargin(0.1f);
     coll_model->SetEnvelope(0.001f);

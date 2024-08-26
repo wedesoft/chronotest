@@ -122,29 +122,27 @@ int main(void)
   glUniform1i(glGetUniformLocation(program, "num_points"), num_points);
 
   chrono::ChSystemNSC sys;
-  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.1, 0.0));
+  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.4, 0.0));
   sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
   sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
-  // sys.SetSolverType(chrono::ChSolver::Type::PSOR);
-  // sys.GetSolver()->AsIterative()->SetMaxIterations(100);
+  sys.SetSolverType(chrono::ChSolver::Type::PSOR);
+  sys.GetSolver()->AsIterative()->SetMaxIterations(100);
 
   auto material = chrono_types::make_shared<chrono::ChContactMaterialNSC>();
   material->SetStaticFriction(0.9f);
   material->SetSlidingFriction(0.5f);
-  material->SetRestitution(0.4f);
+  material->SetRestitution(0.5f);
 
   auto body = chrono_types::make_shared<chrono::ChBody>();
-  body->SetName("particle");
   body->SetMass(10.0);
   body->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
   body->SetPos(chrono::ChVector3(0.0, 0.2, 0.0));
   body->SetPosDt(chrono::ChVector3(0.5, 0.0, 0.0));
-  body->SetFixed(false);
   sys.AddBody(body);
 
   auto coll_model_body = chrono_types::make_shared<chrono::ChCollisionModel>();
   coll_model_body->SetSafeMargin(0.1f);
-  coll_model_body->SetEnvelope(0.01f);
+  coll_model_body->SetEnvelope(0.001f);
   auto shape_body = chrono_types::make_shared<chrono::ChCollisionShapeCylinder>(material, radius, 0.2);
   coll_model_body->AddShape(shape_body);
   body->AddCollisionModel(coll_model_body);
