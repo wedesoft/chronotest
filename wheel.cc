@@ -13,11 +13,14 @@ int height = 480;
 
 const char *vertexSource = "#version 410 core\n\
 uniform float aspect;\n\
+uniform float radius;\n\
+uniform int num_points;\n\
 uniform vec3 translation;\n\
 in vec3 point;\n\
 void main()\n\
 {\n\
-  gl_Position = vec4((point + translation) * vec3(1, aspect, 1), 1);\n\
+  vec3 radius_vector = radius * vec3(cos(2.0 * 3.1415926 * gl_InstanceID / num_points), sin(2.0 * 3.1415926 * gl_InstanceID / num_points), 0);\n\
+  gl_Position = vec4((point + translation + radius_vector) * vec3(1, aspect, 1), 1);\n\
 }";
 
 const char *fragmentSource = "#version 410 core\n\
@@ -126,47 +129,38 @@ int main(void)
 
   glEnableVertexAttribArray(0);
 
-  glPointSize(2.0f);
+  float radius = 0.1;
+  int num_points = 18;
+
+  glPointSize(1.0f);
 
   glUniform1f(glGetUniformLocation(program, "aspect"), (float)width / (float)height);
+  glUniform1f(glGetUniformLocation(program, "radius"), radius);
+  glUniform1i(glGetUniformLocation(program, "num_points"), num_points);
 
   chrono::ChSystemNSC sys;
   sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, 0.0, 0.0));
   sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
-
-  auto center = chrono_types::make_shared<chrono::ChBody>();
-  center->SetName("center");
-  center->SetMass(1.0e+3);
-  center->SetInertiaXX(chrono::ChVector3(1000.0f, 1000.0f, 1000.0f));
-  center->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
-  center->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
-  center->SetFixed(true);
-  sys.AddBody(center);
 
   auto body = chrono_types::make_shared<chrono::ChBody>();
   body->SetName("particle");
   body->SetMass(10.0);
   body->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
   body->SetPos(chrono::ChVector3(0.5, 0.0, 0.0));
-  body->SetPosDt(chrono::ChVector3(0.0, 0.2, 0.0));
   body->SetFixed(false);
   sys.AddBody(body);
-
-  auto load_container = chrono_types::make_shared<chrono::ChLoadContainer>();
-  sys.Add(load_container);
-  auto gravity = chrono_types::make_shared<ChLoadGravity>(body, center);
-  load_container->Add(gravity);
 
   double t = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
     double dt = glfwGetTime() - t;
 
+    glClear(GL_COLOR_BUFFER_BIT);
+
     chrono::ChVector3 position = body->GetPos();
     float translation[3] = {(float)position.x(), (float)position.y(), (float)position.z()};
     glUniform3fv(glGetUniformLocation(program, "translation"), 1, translation);
 
-    // glClear(GL_COLOR_BUFFER_BIT);
-    glDrawElements(GL_POINTS, 1, GL_UNSIGNED_INT, (void *)0);
+    glDrawElementsInstanced(GL_POINTS, 1, GL_UNSIGNED_INT, (void *)0, num_points);
     glfwSwapBuffers(window);
     glfwPollEvents();
     sys.DoStepDynamics(dt);
