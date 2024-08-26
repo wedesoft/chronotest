@@ -8,8 +8,8 @@
 #include <chrono/physics/ChLoadsBody.h>
 #include <chrono/physics/ChLoadContainer.h>
 
-int width = 640;
-int height = 480;
+int width = 1280;
+int height = 720;
 
 const char *vertexSource = "#version 410 core\n\
 uniform float aspect;\n\
@@ -115,7 +115,7 @@ int main(void)
   float radius = 0.1;
   int num_points = 18;
 
-  glPointSize(1.0f);
+  glPointSize(2.0f);
 
   glUniform1f(glGetUniformLocation(program, "aspect"), (float)width / (float)height);
   glUniform1f(glGetUniformLocation(program, "radius"), radius);
