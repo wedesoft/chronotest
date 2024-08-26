@@ -137,7 +137,7 @@ int main(void)
   body->SetMass(10.0);
   body->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
   body->SetPos(chrono::ChVector3(0.0, 0.2, 0.0));
-  body->SetPosDt(chrono::ChVector3(0.5, 0.0, 0.0));
+  body->SetPosDt(chrono::ChVector3(2.5, 0.0, 0.0));
   sys.AddBody(body);
 
   auto coll_model_body = chrono_types::make_shared<chrono::ChCollisionModel>();
