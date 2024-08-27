@@ -144,8 +144,8 @@ int main(void)
 
   auto body = chrono_types::make_shared<chrono::ChBody>();
   body->SetMass(mass);
-  body->SetInertiaXX(chrono::ChVector3d(0.5 * mass * radius * radius + 1.0 / 12 * mass * length * length,
-                                        0.5 * mass * radius * radius + 1.0 / 12 * mass * length * length,
+  body->SetInertiaXX(chrono::ChVector3d(0.25 * mass * radius * radius + 1.0 / 12.0 * mass * length * length,
+                                        0.25 * mass * radius * radius + 1.0 / 12.0 * mass * length * length,
                                         0.5 * mass * radius * radius));
   body->SetPos(chrono::ChVector3(0.0, 0.2, 0.0));
   body->SetPosDt(chrono::ChVector3(5.0, 0.0, 0.0));
