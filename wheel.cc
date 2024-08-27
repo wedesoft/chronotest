@@ -18,16 +18,23 @@ uniform int num_points;\n\
 uniform vec3 translation;\n\
 uniform mat3 rotation;\n\
 in vec3 point;\n\
+out vec3 color;\n\
 void main()\n\
 {\n\
   vec3 radius_vector = radius * vec3(cos(2.0 * 3.1415926 * gl_InstanceID / num_points), sin(2.0 * 3.1415926 * gl_InstanceID / num_points), 0);\n\
+  if (gl_InstanceID == 0)\n\
+    color = vec3(1, 0, 0);\n\
+  else\n\
+    color = vec3(1, 1, 1);\n\
   gl_Position = vec4((rotation * (point + radius_vector) + translation) * vec3(1, aspect, 1), 1);\n\
 }";
 
 const char *fragmentSource = "#version 410 core\n\
+in vec3 color;\n\
 out vec3 fragColor;\n\
 void main()\n\
 {\n\
+  fragColor = color;\n\
   fragColor = vec3(1, 1, 1);\n\
 }";
 
@@ -112,7 +119,9 @@ int main(void)
 
   glEnableVertexAttribArray(0);
 
+  float mass = 0.5;
   float radius = 0.1;
+  float length = 0.2;
   int num_points = 18;
 
   glPointSize(2.0f);
@@ -122,7 +131,7 @@ int main(void)
   glUniform1i(glGetUniformLocation(program, "num_points"), num_points);
 
   chrono::ChSystemNSC sys;
-  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.4, 0.0));
+  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.8, 0.0));
   sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
   sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
   sys.SetSolverType(chrono::ChSolver::Type::PSOR);
@@ -131,19 +140,21 @@ int main(void)
   auto material = chrono_types::make_shared<chrono::ChContactMaterialNSC>();
   material->SetStaticFriction(0.9f);
   material->SetSlidingFriction(0.5f);
-  material->SetRestitution(0.5f);
+  material->SetRestitution(0.3f);
 
   auto body = chrono_types::make_shared<chrono::ChBody>();
-  body->SetMass(10.0);
-  body->SetInertiaXX(chrono::ChVector3(1.0f, 1.0f, 1.0f));
+  body->SetMass(mass);
+  body->SetInertiaXX(chrono::ChVector3d(0.5 * mass * radius * radius + 1.0 / 12 * mass * length * length,
+                                        0.5 * mass * radius * radius + 1.0 / 12 * mass * length * length,
+                                        0.5 * mass * radius * radius));
   body->SetPos(chrono::ChVector3(0.0, 0.2, 0.0));
-  body->SetPosDt(chrono::ChVector3(2.5, 0.0, 0.0));
+  body->SetPosDt(chrono::ChVector3(8.0, 0.0, 0.0));
   sys.AddBody(body);
 
   auto coll_model_body = chrono_types::make_shared<chrono::ChCollisionModel>();
   coll_model_body->SetSafeMargin(0.1f);
   coll_model_body->SetEnvelope(0.001f);
-  auto shape_body = chrono_types::make_shared<chrono::ChCollisionShapeCylinder>(material, radius, 0.2);
+  auto shape_body = chrono_types::make_shared<chrono::ChCollisionShapeCylinder>(material, radius, length);
   coll_model_body->AddShape(shape_body);
   body->AddCollisionModel(coll_model_body);
   body->EnableCollision(true);
@@ -158,7 +169,7 @@ int main(void)
   auto coll_model_ground = chrono_types::make_shared<chrono::ChCollisionModel>();
   coll_model_ground->SetSafeMargin(0.1f);
   coll_model_ground->SetEnvelope(0.001f);
-  auto shape_ground = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 2.0, 0.2, 2.0);
+  auto shape_ground = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 200.0, 0.2, 2.0);
   coll_model_ground->AddShape(shape_ground);
   ground->AddCollisionModel(coll_model_ground);
   ground->EnableCollision(true);
@@ -184,9 +195,10 @@ int main(void)
     glUniformMatrix3fv(glGetUniformLocation(program, "rotation"), 1, GL_TRUE, rotation);
 
     chrono::ChVector3 position = body->GetPos();
-    position.Set(0.0, position.y(), position.z());
-    body->SetPos(position);
-    float translation[3] = {(float)position.x(), (float)position.y(), (float)position.z()};
+    double px = position.x();
+    while (px >= 1.0)
+      px -= 2.0;
+    float translation[3] = {(float)px, (float)position.y(), (float)position.z()};
     glUniform3fv(glGetUniformLocation(program, "translation"), 1, translation);
 
     glDrawElementsInstanced(GL_POINTS, 1, GL_UNSIGNED_INT, (void *)0, num_points);
