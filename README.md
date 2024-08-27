@@ -61,6 +61,15 @@ export LD_LIBRARY_PATH=/usr/local/lib
 ./suspension
 ```
 
+### Wheel touching the ground with speed
+
+[![Spring-damper system](https://i.ytimg.com/vi/47Z3ELcNVW4/hqdefault.jpg)](https://www.youtube.com/watch?v=47Z3ELcNVW4)
+
+```Shell
+export LD_LIBRARY_PATH=/usr/local/lib
+./wheel
+```
+
 ### See also
 
 * [Chrono tutorial (PDF)][5]

@@ -148,7 +148,7 @@ int main(void)
                                         0.5 * mass * radius * radius + 1.0 / 12 * mass * length * length,
                                         0.5 * mass * radius * radius));
   body->SetPos(chrono::ChVector3(0.0, 0.2, 0.0));
-  body->SetPosDt(chrono::ChVector3(8.0, 0.0, 0.0));
+  body->SetPosDt(chrono::ChVector3(5.0, 0.0, 0.0));
   sys.AddBody(body);
 
   auto coll_model_body = chrono_types::make_shared<chrono::ChCollisionModel>();
