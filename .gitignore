@@ -4,4 +4,5 @@ stack
 pendulum
 suspension
 wheel
+gears
 *.o
