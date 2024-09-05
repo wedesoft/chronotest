@@ -34,6 +34,33 @@ void main()\n\
   fragColor = vec3(1, 1, 1) * (ambient + diffuse);\n\
 }";
 
+const char *vertex_wheel = "#version 410 core\n\
+uniform float aspect;\n\
+uniform float radius;\n\
+uniform int num_points;\n\
+uniform vec3 translation;\n\
+uniform mat3 rotation;\n\
+in vec3 point;\n\
+out vec3 color;\n\
+void main()\n\
+{\n\
+  vec3 radius_vector = radius * vec3(cos(2.0 * 3.1415926 * gl_InstanceID / num_points), sin(2.0 * 3.1415926 * gl_InstanceID / num_points), 0);\n\
+  if (gl_InstanceID == 0)\n\
+    color = vec3(1, 0, 0);\n\
+  else\n\
+    color = vec3(1, 1, 1);\n\
+  gl_Position = vec4((rotation * (point + radius_vector) + translation) * vec3(1, aspect, 1), 1);\n\
+}";
+
+const char *fragment_wheel = "#version 410 core\n\
+in vec3 color;\n\
+out vec3 fragColor;\n\
+void main()\n\
+{\n\
+  fragColor = color;\n\
+  fragColor = vec3(1, 1, 1);\n\
+}";
+
 // Vertex array data
 GLfloat vertices_cuboid[] = {
   // Front face
@@ -71,6 +98,14 @@ GLfloat vertices_cuboid[] = {
    0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
    0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
   -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f
+};
+
+GLfloat vertices_wheel[] = {
+   0.0f,  0.0f,  0.0f
+};
+
+unsigned int indices_wheel[] = {
+   0
 };
 
 unsigned int indices_cuboid[] = {
@@ -116,6 +151,7 @@ int main(void)
   glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
   glViewport(0, 0, width, height);
 
+  // Cuboid shaders
   GLuint vertex_shader_cuboid = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertex_shader_cuboid, 1, &vertex_cuboid, NULL);
   glCompileShader(vertex_shader_cuboid);
@@ -132,18 +168,35 @@ int main(void)
   glLinkProgram(program_cuboid);
   handleLinkError("Shader program", program_cuboid);
 
-  GLuint vao;
-  GLuint vbo;
-  GLuint idx;
+  // Wheel shaders
+  GLuint vertex_shader_wheel = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertex_shader_wheel, 1, &vertex_wheel, NULL);
+  glCompileShader(vertex_shader_wheel);
+  handleCompileError("Vertex shader", vertex_shader_wheel);
 
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
+  GLuint fragment_shader_wheel = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragment_shader_wheel, 1, &fragment_wheel, NULL);
+  glCompileShader(fragment_shader_wheel);
+  handleCompileError("Fragment shader", fragment_shader_wheel);
 
-  glGenBuffers(1, &vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  GLuint program_wheel = glCreateProgram();
+  glAttachShader(program_wheel, vertex_shader_wheel);
+  glAttachShader(program_wheel, fragment_shader_wheel);
+  glLinkProgram(program_wheel);
+  handleLinkError("Shader program", program_wheel);
+
+  GLuint vao_cuboid;
+  GLuint vbo_cuboid;
+  GLuint idx_cuboid;
+
+  glGenVertexArrays(1, &vao_cuboid);
+  glBindVertexArray(vao_cuboid);
+
+  glGenBuffers(1, &vbo_cuboid);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_cuboid);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_cuboid), vertices_cuboid, GL_STATIC_DRAW);
-  glGenBuffers(1, &idx);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
+  glGenBuffers(1, &idx_cuboid);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_cuboid);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices_cuboid), indices_cuboid, GL_STATIC_DRAW);
 
   glUseProgram(program_cuboid);
@@ -158,9 +211,6 @@ int main(void)
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
 
-  glDisable(GL_CULL_FACE);
-  glEnable(GL_DEPTH_TEST);
-
   float light[3] = {0.36f, 0.8f, -0.48f};
   glUniform3fv(glGetUniformLocation(program_cuboid, "light"), 1, light);
   glUniform1f(glGetUniformLocation(program_cuboid, "aspect"), (float)width / (float)height);
@@ -169,6 +219,38 @@ int main(void)
   float c = 0.08;
   float axes[3] = {a, b, c};
   glUniform3fv(glGetUniformLocation(program_cuboid, "axes"), 1, axes);
+
+  GLuint vao_wheel;
+  GLuint vbo_wheel;
+  GLuint idx_wheel;
+
+  glGenVertexArrays(1, &vao_wheel);
+  glBindVertexArray(vao_wheel);
+
+  glGenBuffers(1, &vbo_wheel);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_wheel);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_wheel), vertices_wheel, GL_STATIC_DRAW);
+  glGenBuffers(1, &idx_wheel);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_wheel);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices_wheel), indices_wheel, GL_STATIC_DRAW);
+
+  glUseProgram(program_wheel);
+
+  glVertexAttribPointer(glGetAttribLocation(program_wheel, "point"),
+                        3, GL_FLOAT, GL_FALSE,
+                        3 * sizeof(float), (void *)0);
+
+  glEnableVertexAttribArray(0);
+
+  float radius = 0.1;
+  int num_points = 18;
+  glUniform1f(glGetUniformLocation(program_wheel, "aspect"), (float)width / (float)height);
+  glUniform1f(glGetUniformLocation(program_wheel, "radius"), radius);
+  glUniform1i(glGetUniformLocation(program_wheel, "num_points"), num_points);
+
+  glDisable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+  glPointSize(2.0f);
 
   chrono::ChSystemNSC sys;
   sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
@@ -190,6 +272,11 @@ int main(void)
   double t = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
     double dt = glfwGetTime() - t;
+
+    glUseProgram(program_cuboid);
+    glBindVertexArray(vao_cuboid);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_cuboid);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_cuboid);
 
     chrono::ChQuaternion quat = body->GetRot();
     chrono::ChMatrix33 mat(quat);
@@ -218,11 +305,20 @@ int main(void)
   };
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-  glDeleteBuffers(1, &idx);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glDeleteBuffers(1, &vbo);
   glBindVertexArray(0);
-  glDeleteVertexArrays(1, &vao);
+
+  glDeleteBuffers(1, &idx_cuboid);
+  glDeleteBuffers(1, &vbo_cuboid);
+  glDeleteVertexArrays(1, &vao_cuboid);
+
+  glDeleteBuffers(1, &idx_wheel);
+  glDeleteBuffers(1, &vbo_wheel);
+  glDeleteVertexArrays(1, &vao_wheel);
+
+  glDeleteProgram(program_wheel);
+  glDeleteShader(vertex_shader_wheel);
+  glDeleteShader(fragment_shader_wheel);
 
   glDeleteProgram(program_cuboid);
   glDeleteShader(vertex_shader_cuboid);
