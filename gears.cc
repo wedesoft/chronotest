@@ -242,7 +242,8 @@ int main(void)
 
   glEnableVertexAttribArray(0);
 
-  float radius = 0.1;
+  float radius = 0.03;
+  float length = 0.01;
   int num_points = 18;
   glUniform1f(glGetUniformLocation(program_wheel, "aspect"), (float)width / (float)height);
   glUniform1f(glGetUniformLocation(program_wheel, "radius"), radius);
@@ -258,7 +259,7 @@ int main(void)
 
   // https://math.stackexchange.com/questions/4501028/calculating-moment-of-inertia-for-a-cuboid
   auto body = chrono_types::make_shared<chrono::ChBody>();
-  body->SetName("Cuboid");
+  body->SetName("cuboid");
   float mass = 10.0;
   body->SetMass(mass);
   body->SetInertiaXX(chrono::ChVector3(mass * (b * b + c * c) / 12.0,
@@ -268,6 +269,26 @@ int main(void)
   body->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
   body->SetAngVelLocal(chrono::ChVector3(0.0, 0.0, 0.0));
   sys.AddBody(body);
+
+  std::vector<std::shared_ptr<chrono::ChBody>> wheels;
+
+  float mass_wheel = 0.1;
+  for (int i=0; i<4; i++) {
+    auto wheel = chrono_types::make_shared<chrono::ChBody>();
+    double mass = mass_wheel;
+    wheel->SetName("wheel");
+    wheel->SetMass(mass);
+    wheel->SetInertiaXX(chrono::ChVector3d(0.25 * mass * radius * radius + 1.0 / 12.0 * mass * length * length,
+                                           0.25 * mass * radius * radius + 1.0 / 12.0 * mass * length * length,
+                                           0.5 * mass * radius * radius));
+    int x = i / 2;
+    int z = i % 2;
+    wheel->SetPos(chrono::ChVector3d(x * a - 0.5 * a, -b - radius, z * c - 0.5 * c));
+    wheel->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
+    wheel->SetAngVelLocal(chrono::ChVector3(0.0, 0.0, 0.0));
+    sys.AddBody(wheel);
+    wheels.push_back(wheel);
+  }
 
   double t = glfwGetTime();
   while (!glfwWindowShouldClose(window)) {
@@ -298,6 +319,35 @@ int main(void)
 
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glDrawElements(GL_QUADS, 24, GL_UNSIGNED_INT, (void *)0);
+
+    glUseProgram(program_wheel);
+    glBindVertexArray(vao_wheel);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_wheel);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_wheel);
+
+    for (int i=0; i<4; i++) {
+      auto wheel = wheels[i];
+      chrono::ChQuaternion quat = wheel->GetRot();
+      chrono::ChMatrix33 mat(quat);
+      chrono::ChVector3 x = mat.GetAxisX();
+      chrono::ChVector3 y = mat.GetAxisY();
+      chrono::ChVector3 z = mat.GetAxisZ();
+
+      float rotation[9] = {
+        (float)x.x(), (float)y.x(), (float)z.x(),
+        (float)x.y(), (float)y.y(), (float)z.y(),
+        (float)x.z(), (float)y.z(), (float)z.z()
+      };
+
+      glUniformMatrix3fv(glGetUniformLocation(program_wheel, "rotation"), 1, GL_TRUE, rotation);
+
+      chrono::ChVector3 position = wheel->GetPos();
+      float translation[3] = {(float)position.x(), (float)position.y(), (float)position.z()};
+      glUniform3fv(glGetUniformLocation(program_wheel, "translation"), 1, translation);
+
+      glDrawElementsInstanced(GL_POINTS, 1, GL_UNSIGNED_INT, (void *)0, num_points);
+    };
+
     glfwSwapBuffers(window);
     glfwPollEvents();
     sys.DoStepDynamics(dt);
