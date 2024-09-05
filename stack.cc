@@ -110,7 +110,7 @@ void handleLinkError(const char *step, GLuint program)
 int main(void)
 {
   glfwInit();
-  GLFWwindow *window = glfwCreateWindow(width, height, "Falling stack of boxes with Chrono", NULL, NULL);
+  GLFWwindow *window = glfwCreateWindow(width, height, "Falling stack of boxes with Project Chrono", NULL, NULL);
   glfwMakeContextCurrent(window);
   glewInit();
 

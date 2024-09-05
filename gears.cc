@@ -144,7 +144,7 @@ void handleLinkError(const char *step, GLuint program)
 int main(void)
 {
   glfwInit();
-  GLFWwindow *window = glfwCreateWindow(width, height, "Tumbling motion with Project Chrono", NULL, NULL);
+  GLFWwindow *window = glfwCreateWindow(width, height, "Vehicle with gears with Project Chrono", NULL, NULL);
   glfwMakeContextCurrent(window);
   glewInit();
 
