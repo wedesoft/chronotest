@@ -257,12 +257,25 @@ int main(void)
   sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
   sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, 0.0, 0.0));
 
+  auto material = chrono_types::make_shared<chrono::ChContactMaterialNSC>();
+  material->SetStaticFriction(0.9f);
+  material->SetSlidingFriction(0.5f);
+  material->SetRestitution(0.3f);
+
   auto ground = chrono_types::make_shared<chrono::ChBody>();
   ground->SetFixed(true);
   ground->SetMass(1e+6);
   ground->SetInertiaXX(chrono::ChVector3(1e+5, 1e+5, 1e+5));
   ground->SetPos(chrono::ChVector3(0.0, -0.5, 0.0));
   sys.AddBody(ground);
+
+  auto coll_model_ground = chrono_types::make_shared<chrono::ChCollisionModel>();
+  coll_model_ground->SetSafeMargin(0.1f);
+  coll_model_ground->SetEnvelope(0.001f);
+  auto shape_ground = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 200.0, 0.2, 2.0);
+  coll_model_ground->AddShape(shape_ground);
+  ground->AddCollisionModel(coll_model_ground);
+  ground->EnableCollision(true);
 
   // https://math.stackexchange.com/questions/4501028/calculating-moment-of-inertia-for-a-cuboid
   auto body = chrono_types::make_shared<chrono::ChBody>();
@@ -295,6 +308,14 @@ int main(void)
     wheel->SetAngVelLocal(chrono::ChVector3(0.0, 0.0, 0.0));
     sys.AddBody(wheel);
     wheels.push_back(wheel);
+
+    auto coll_model_wheel = chrono_types::make_shared<chrono::ChCollisionModel>();
+    coll_model_wheel->SetSafeMargin(0.1f);
+    coll_model_wheel->SetEnvelope(0.001f);
+    auto shape_wheel = chrono_types::make_shared<chrono::ChCollisionShapeCylinder>(material, radius, length);
+    coll_model_wheel->AddShape(shape_wheel);
+    wheel->AddCollisionModel(coll_model_wheel);
+    wheel->EnableCollision(true);
   }
 
   double t = glfwGetTime();
