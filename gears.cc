@@ -257,6 +257,13 @@ int main(void)
   sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
   sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, 0.0, 0.0));
 
+  auto ground = chrono_types::make_shared<chrono::ChBody>();
+  ground->SetFixed(true);
+  ground->SetMass(1e+6);
+  ground->SetInertiaXX(chrono::ChVector3(1e+5, 1e+5, 1e+5));
+  ground->SetPos(chrono::ChVector3(0.0, -0.5, 0.0));
+  sys.AddBody(ground);
+
   // https://math.stackexchange.com/questions/4501028/calculating-moment-of-inertia-for-a-cuboid
   auto body = chrono_types::make_shared<chrono::ChBody>();
   body->SetName("cuboid");
