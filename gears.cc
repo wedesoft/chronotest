@@ -255,12 +255,19 @@ int main(void)
 
   chrono::ChSystemNSC sys;
   sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
-  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, 0.0, 0.0));
+  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.15, 0.0));
+  sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
+  sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
+  sys.SetSolverType(chrono::ChSolver::Type::PSOR);
+  sys.GetSolver()->AsIterative()->SetMaxIterations(100);
 
   auto material = chrono_types::make_shared<chrono::ChContactMaterialNSC>();
   material->SetStaticFriction(0.9f);
   material->SetSlidingFriction(0.5f);
   material->SetRestitution(0.3f);
+
+  float margin = 0.0001f;
+  float envelope = 0.0001f;
 
   auto ground = chrono_types::make_shared<chrono::ChBody>();
   ground->SetFixed(true);
@@ -270,8 +277,8 @@ int main(void)
   sys.AddBody(ground);
 
   auto coll_model_ground = chrono_types::make_shared<chrono::ChCollisionModel>();
-  coll_model_ground->SetSafeMargin(0.1f);
-  coll_model_ground->SetEnvelope(0.001f);
+  coll_model_ground->SetSafeMargin(margin);
+  coll_model_ground->SetEnvelope(envelope);
   auto shape_ground = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 200.0, 0.2, 2.0);
   coll_model_ground->AddShape(shape_ground);
   ground->AddCollisionModel(coll_model_ground);
@@ -310,8 +317,8 @@ int main(void)
     wheels.push_back(wheel);
 
     auto coll_model_wheel = chrono_types::make_shared<chrono::ChCollisionModel>();
-    coll_model_wheel->SetSafeMargin(0.1f);
-    coll_model_wheel->SetEnvelope(0.001f);
+    coll_model_wheel->SetSafeMargin(margin);
+    coll_model_wheel->SetEnvelope(envelope);
     auto shape_wheel = chrono_types::make_shared<chrono::ChCollisionShapeCylinder>(material, radius, length);
     coll_model_wheel->AddShape(shape_wheel);
     wheel->AddCollisionModel(coll_model_wheel);
