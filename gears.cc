@@ -255,7 +255,7 @@ int main(void)
 
   chrono::ChSystemNSC sys;
   sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
-  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.15, 0.0));
+  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.25, 0.0));
   sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
   sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
   sys.SetSolverType(chrono::ChSolver::Type::PSOR);
@@ -330,8 +330,8 @@ int main(void)
 
     auto link = chrono_types::make_shared<chrono::ChLinkTSDA>();
     link->Initialize(body, wheel, false, wheel->GetPos() + chrono::ChVector3d(0.0, b + radius, 0.0), wheel->GetPos());
-    link->SetSpringCoefficient(120.0f);
-    link->SetDampingCoefficient(10.0f);
+    link->SetSpringCoefficient(80.0f);
+    link->SetDampingCoefficient(8.0f);
     sys.AddLink(link);
   }
 
