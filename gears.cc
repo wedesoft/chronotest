@@ -216,7 +216,7 @@ int main(void)
   glUniform1f(glGetUniformLocation(program_cuboid, "aspect"), (float)width / (float)height);
   float a = 0.3;
   float b = 0.06;
-  float c = 0.08;
+  float c = 0.1;
   float axes[3] = {a, b, c};
   glUniform3fv(glGetUniformLocation(program_cuboid, "axes"), 1, axes);
 
@@ -266,8 +266,8 @@ int main(void)
   material->SetSlidingFriction(0.5f);
   material->SetRestitution(0.3f);
 
-  float margin = 0.0001f;
-  float envelope = 0.0001f;
+  float margin = 0.001f;
+  float envelope = 0.01f;
 
   auto ground = chrono_types::make_shared<chrono::ChBody>();
   ground->SetFixed(true);
@@ -294,7 +294,7 @@ int main(void)
                                        mass * (a * a + b * b) / 12.0));
   body->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
   body->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
-  body->SetAngVelLocal(chrono::ChVector3(0.0, 0.0, 0.0));
+  body->SetAngVelLocal(chrono::ChVector3(-0.1, 0.3, 0.3));
   sys.AddBody(body);
 
   std::vector<std::shared_ptr<chrono::ChBody>> wheels;
@@ -330,8 +330,8 @@ int main(void)
 
     auto link = chrono_types::make_shared<chrono::ChLinkTSDA>();
     link->Initialize(body, wheel, false, wheel->GetPos() + chrono::ChVector3d(0.0, b + radius, 0.0), wheel->GetPos());
-    link->SetSpringCoefficient(80.0f);
-    link->SetDampingCoefficient(8.0f);
+    link->SetSpringCoefficient(120.0f);
+    link->SetDampingCoefficient(10.0f);
     sys.AddLink(link);
   }
 
