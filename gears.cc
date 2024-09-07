@@ -215,7 +215,7 @@ int main(void)
   glUniform3fv(glGetUniformLocation(program_cuboid, "light"), 1, light);
   glUniform1f(glGetUniformLocation(program_cuboid, "aspect"), (float)width / (float)height);
   float a = 0.3;
-  float b = 0.03;
+  float b = 0.06;
   float c = 0.08;
   float axes[3] = {a, b, c};
   glUniform3fv(glGetUniformLocation(program_cuboid, "axes"), 1, axes);
@@ -259,7 +259,7 @@ int main(void)
   sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
   sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
   sys.SetSolverType(chrono::ChSolver::Type::PSOR);
-  sys.GetSolver()->AsIterative()->SetMaxIterations(100);
+  sys.GetSolver()->AsIterative()->SetMaxIterations(10);
 
   auto material = chrono_types::make_shared<chrono::ChContactMaterialNSC>();
   material->SetStaticFriction(0.9f);
@@ -273,13 +273,13 @@ int main(void)
   ground->SetFixed(true);
   ground->SetMass(1e+6);
   ground->SetInertiaXX(chrono::ChVector3(1e+5, 1e+5, 1e+5));
-  ground->SetPos(chrono::ChVector3(0.0, -0.5, 0.0));
+  ground->SetPos(chrono::ChVector3(0.0, -0.4, 0.0));
   sys.AddBody(ground);
 
   auto coll_model_ground = chrono_types::make_shared<chrono::ChCollisionModel>();
   coll_model_ground->SetSafeMargin(margin);
   coll_model_ground->SetEnvelope(envelope);
-  auto shape_ground = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 200.0, 0.2, 2.0);
+  auto shape_ground = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 200.0, 0.3, 2.0);
   coll_model_ground->AddShape(shape_ground);
   ground->AddCollisionModel(coll_model_ground);
   ground->EnableCollision(true);
@@ -295,12 +295,11 @@ int main(void)
   body->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
   body->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
   body->SetAngVelLocal(chrono::ChVector3(0.0, 0.0, 0.0));
-  body->SetFixed(true);
   sys.AddBody(body);
 
   std::vector<std::shared_ptr<chrono::ChBody>> wheels;
 
-  float mass_wheel = 0.1;
+  float mass_wheel = 0.2;
   for (int i=0; i<4; i++) {
     auto wheel = chrono_types::make_shared<chrono::ChBody>();
     double mass = mass_wheel;
@@ -311,7 +310,7 @@ int main(void)
                                            0.5 * mass * radius * radius));
     int x = i / 2;
     int z = i % 2;
-    wheel->SetPos(chrono::ChVector3d(x * a - 0.5 * a, -b - radius, z * c - 0.5 * c));
+    wheel->SetPos(chrono::ChVector3d(x * a - 0.5 * a, - b - radius, z * c - 0.5 * c));
     wheel->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
     wheel->SetAngVelLocal(chrono::ChVector3(0.0, 0.0, 0.0));
     sys.AddBody(wheel);
@@ -328,6 +327,12 @@ int main(void)
     auto prismatic = chrono_types::make_shared<chrono::ChLinkLockPrismatic>();
     prismatic->Initialize(body, wheel, chrono::ChFrame<>(body->GetPos(), chrono::QuatFromAngleX(-chrono::CH_PI_2)));
     sys.AddLink(prismatic);
+
+    auto link = chrono_types::make_shared<chrono::ChLinkTSDA>();
+    link->Initialize(body, wheel, false, wheel->GetPos() + chrono::ChVector3d(0.0, b + radius, 0.0), wheel->GetPos());
+    link->SetSpringCoefficient(120.0f);
+    link->SetDampingCoefficient(10.0f);
+    sys.AddLink(link);
   }
 
   double t = glfwGetTime();
