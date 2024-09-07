@@ -295,6 +295,7 @@ int main(void)
   body->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
   body->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
   body->SetAngVelLocal(chrono::ChVector3(0.0, 0.0, 0.0));
+  body->SetFixed(true);
   sys.AddBody(body);
 
   std::vector<std::shared_ptr<chrono::ChBody>> wheels;
@@ -323,6 +324,10 @@ int main(void)
     coll_model_wheel->AddShape(shape_wheel);
     wheel->AddCollisionModel(coll_model_wheel);
     wheel->EnableCollision(true);
+
+    auto prismatic = chrono_types::make_shared<chrono::ChLinkLockPrismatic>();
+    prismatic->Initialize(body, wheel, chrono::ChFrame<>(body->GetPos(), chrono::QuatFromAngleX(-chrono::CH_PI_2)));
+    sys.AddLink(prismatic);
   }
 
   double t = glfwGetTime();
