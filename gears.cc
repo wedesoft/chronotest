@@ -352,6 +352,7 @@ int main(void)
     link->SetDampingCoefficient(10.0f);
     sys.AddLink(link);
 
+    // TODO: use GetMotorAngleDt to implement a braking function.
     auto revolute = chrono_types::make_shared<chrono::ChLinkMotorRotationTorque>();
     revolute->Initialize(gear, wheel, chrono::ChFrame<>(wheel->GetPos(), chrono::QUNIT));
     revolute->SetTorqueFunction(chrono_types::make_shared<chrono::ChFunctionConst>(0.001));
