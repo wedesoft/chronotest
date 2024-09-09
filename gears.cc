@@ -142,6 +142,23 @@ void handleLinkError(const char *step, GLuint program)
   };
 }
 
+class BrakeFunction: public chrono::ChFunction {
+public:
+  std::shared_ptr<chrono::ChLinkMotorRotationTorque> motor;
+
+  virtual BrakeFunction* Clone() const override { return new BrakeFunction(*this); }
+
+  virtual double GetVal(double x) const override {
+    double w = motor->GetMotorAngleDt();
+    if (w > 0.005)
+      return -0.005;
+    else if (w < -0.005)
+      return 0.005;
+    else
+      return 0.0;
+  }
+};
+
 int main(void)
 {
   glfwInit();
@@ -260,7 +277,7 @@ int main(void)
   sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
   sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
   sys.SetSolverType(chrono::ChSolver::Type::PSOR);
-  sys.GetSolver()->AsIterative()->SetMaxIterations(10);
+  sys.GetSolver()->AsIterative()->SetMaxIterations(20);
 
   auto material = chrono_types::make_shared<chrono::ChContactMaterialNSC>();
   material->SetStaticFriction(0.9f);
@@ -295,7 +312,7 @@ int main(void)
                                        mass * (a * a + c * c) / 12.0,
                                        mass * (a * a + b * b) / 12.0));
   body->SetPos(chrono::ChVector3(0.0, 0.0, 0.0));
-  body->SetPosDt(chrono::ChVector3(0.0, 0.0, 0.0));
+  body->SetPosDt(chrono::ChVector3(0.15, 0.0, 0.0));
   body->SetAngVelLocal(chrono::ChVector3(-0.1, 0.3, 0.3));
   sys.AddBody(body);
 
@@ -352,10 +369,11 @@ int main(void)
     link->SetDampingCoefficient(10.0f);
     sys.AddLink(link);
 
-    // TODO: use GetMotorAngleDt to implement a braking function.
     auto revolute = chrono_types::make_shared<chrono::ChLinkMotorRotationTorque>();
     revolute->Initialize(gear, wheel, chrono::ChFrame<>(wheel->GetPos(), chrono::QUNIT));
-    revolute->SetTorqueFunction(chrono_types::make_shared<chrono::ChFunctionConst>(0.001));
+    auto brake = chrono_types::make_shared<BrakeFunction>();
+    brake->motor = revolute;
+    revolute->SetTorqueFunction(brake);
     sys.AddLink(revolute);
   }
 
