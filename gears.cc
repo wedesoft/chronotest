@@ -281,6 +281,7 @@ int main(void)
   coll_model_ground->SetEnvelope(envelope);
   auto shape_ground = chrono_types::make_shared<chrono::ChCollisionShapeBox>(material, 200.0, 0.3, 2.0);
   coll_model_ground->AddShape(shape_ground);
+  coll_model_ground->SetFamily(1);
   ground->AddCollisionModel(coll_model_ground);
   ground->EnableCollision(true);
 
@@ -321,6 +322,8 @@ int main(void)
     coll_model_wheel->SetEnvelope(envelope);
     auto shape_wheel = chrono_types::make_shared<chrono::ChCollisionShapeCylinder>(material, radius, length);
     coll_model_wheel->AddShape(shape_wheel);
+    coll_model_wheel->SetFamily(2);
+    coll_model_wheel->DisallowCollisionsWith(2);
     wheel->AddCollisionModel(coll_model_wheel);
     wheel->EnableCollision(true);
 
