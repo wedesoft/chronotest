@@ -235,7 +235,7 @@ int main(void)
   glUniform1f(glGetUniformLocation(program_cuboid, "aspect"), (float)width / (float)height);
   float a = 0.3;
   float b = 0.04;
-  float c = 0.15;
+  float c = 0.2;
   float axes[3] = {a, b, c};
   glUniform3fv(glGetUniformLocation(program_cuboid, "axes"), 1, axes);
 
@@ -275,14 +275,15 @@ int main(void)
   float margin = 0.01f;
   float envelope = 0.001f;
   float max_dt = 0.02;
+  int n = 1;
 
   chrono::ChSystemNSC sys;
   sys.SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
-  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.3, 0.0));
+  sys.SetGravitationalAcceleration(chrono::ChVector3(0.0, -0.25, 0.0));
   sys.SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
   sys.SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED);
   sys.SetSolverType(chrono::ChSolver::Type::BARZILAIBORWEIN);
-  sys.GetSolver()->AsIterative()->SetMaxIterations(25);
+  sys.GetSolver()->AsIterative()->SetMaxIterations(25 / n);
 
   auto material = chrono_types::make_shared<chrono::ChContactMaterialNSC>();
   material->SetStaticFriction(0.8f);
@@ -305,7 +306,7 @@ int main(void)
   ground->AddCollisionModel(coll_model_ground);
   ground->EnableCollision(true);
 
-  double speed = 2.0;
+  double speed = 1.0;
 
   // https://math.stackexchange.com/questions/4501028/calculating-moment-of-inertia-for-a-cuboid
   auto body = chrono_types::make_shared<chrono::ChBody>();
@@ -324,9 +325,9 @@ int main(void)
 
   float mass_wheel = 0.2;
   float mass_gear = 0.2;
-  for (int i=0; i<4; i++) {
-    int x = i / 2;
-    int z = i % 2;
+  for (int i=0; i<3; i++) {
+    int x = i % 2;
+    int z = i - 1;
 
     auto gear = chrono_types::make_shared<chrono::ChBody>();
     double mass = mass_gear;
@@ -335,7 +336,7 @@ int main(void)
     gear->SetInertiaXX(chrono::ChVector3d(1.0 / 12.0 * mass * radius * radius,
                                           1.0 / 12.0 * mass * radius * radius,
                                           1.0 / 12.0 * mass * radius * radius));
-    gear->SetPos(chrono::ChVector3d(x * a - 0.5 * a, - b - radius, z * c - 0.5 * c));
+    gear->SetPos(chrono::ChVector3d(x * a - 0.5 * a, - b - radius, z * c * 0.5));
     gear->SetPosDt(chrono::ChVector3(speed, 0.0, 0.0));
     gear->SetAngVelLocal(chrono::ChVector3(0.0, 0.0, 0.0));
     sys.AddBody(gear);
@@ -347,7 +348,7 @@ int main(void)
     wheel->SetInertiaXX(chrono::ChVector3d(0.25 * mass * radius * radius + 1.0 / 12.0 * mass * length * length,
                                            0.25 * mass * radius * radius + 1.0 / 12.0 * mass * length * length,
                                            0.5 * mass * radius * radius));
-    wheel->SetPos(chrono::ChVector3d(x * a - 0.5 * a, - b - radius, z * c - 0.5 * c));
+    wheel->SetPos(chrono::ChVector3d(x * a * (0.5 + 0.3) - 0.3 * a, - b - radius, z * c * 0.5));
     wheel->SetPosDt(chrono::ChVector3(speed, 0.0, 0.0));
     wheel->SetAngVelLocal(chrono::ChVector3(0.0, 0.0, 0.0));
     sys.AddBody(wheel);
@@ -369,15 +370,15 @@ int main(void)
 
     auto link = chrono_types::make_shared<chrono::ChLinkTSDA>();
     link->Initialize(body, gear, false, gear->GetPos() + chrono::ChVector3d(0.0, b + radius, 0.0), gear->GetPos());
-    link->SetSpringCoefficient(120.0f);
-    link->SetDampingCoefficient(10.0f);
+    link->SetSpringCoefficient(z == 0 ? 160.0f : 240.0f);
+    link->SetDampingCoefficient(20.0f);
     sys.AddLink(link);
 
     auto revolute = chrono_types::make_shared<chrono::ChLinkMotorRotationTorque>();
     revolute->Initialize(gear, wheel, chrono::ChFrame<>(wheel->GetPos(), chrono::QUNIT));
     auto brake = chrono_types::make_shared<BrakeFunction>();
     brake->motor = revolute;
-    brake->braking = x == 0 ? 0.01 : 0.005;
+    brake->braking = x == 1 ? 0.0 : 0.007;
     revolute->SetTorqueFunction(brake);
     sys.AddLink(revolute);
   }
@@ -422,7 +423,7 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, vbo_wheel);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_wheel);
 
-    for (int i=0; i<4; i++) {
+    for (int i=0; i<3; i++) {
       auto wheel = wheels[i];
       chrono::ChQuaternion quat = wheel->GetRot();
       chrono::ChMatrix33 mat(quat);
@@ -447,7 +448,6 @@ int main(void)
 
     glfwSwapBuffers(window);
     glfwPollEvents();
-    int n = 1;
     for (int i=0; i<n; i++) {
       sys.DoStepDynamics(dt / n);
     }
