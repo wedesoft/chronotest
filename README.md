@@ -70,6 +70,15 @@ export LD_LIBRARY_PATH=/usr/local/lib
 ./wheel
 ```
 
+### Simulation of landing gears
+
+[![Landing gears](https://i.ytimg.com/vi/C7YYBnOl1Fg/hqdefault.jpg)](https://www.youtube.com/watch?v=C7YYBnOl1Fg)
+
+```Shell
+export LD_LIBRARY_PATH=/usr/local/lib
+./gears
+```
+
 ### See also
 
 * [Chrono tutorial (PDF)][5]
